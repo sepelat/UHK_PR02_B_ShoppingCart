@@ -6,7 +6,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 
 public class MainFrame extends JFrame implements ActionListener {
-
+    // Tlačítka deklarujeme zde, abychom k nim měli přístup v metodě actionPerformed
     JButton btnInputAdd;
     JButton btnInputRemove;
 
@@ -19,9 +19,13 @@ public class MainFrame extends JFrame implements ActionListener {
     }
 
     public void initGUI() {
+        // Vytvoříme hlavní panel, do kterého budeme přidávat další (pod)panely.
+        // Naším cílem při tvorbě GUI, je snaha jednotlivé komponenty zanořovat.
         JPanel panelMain = new JPanel(new BorderLayout());
 
-        JPanel panelInputs = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        // Vytvoříme další 3 panely. Panel pro prvky formuláře pro přidání položky.
+        // Panel pro tabulku a panel pro patičku.
+        JPanel panelInputs = new JPanel(new FlowLayout(FlowLayout.LEFT)); // FlowLayout LEFT - komponenty chceme zarovnat zleva doprava.
         JPanel panelTable = new JPanel();
         JPanel panelFooter = new JPanel();
 
@@ -35,34 +39,38 @@ public class MainFrame extends JFrame implements ActionListener {
         JLabel lblInputPieces = new JLabel("Počet kusů: ");
         JTextField txtInputPieces = new JTextField("", 5);
 
+        // Tlačítka
         btnInputAdd = new JButton("Přidat");
-        btnInputAdd.addActionListener(this);
-        btnInputRemove = new JButton("Smazat");
+        btnInputAdd.addActionListener(this); // Nastavení ActionListeneru - kdo obslouží kliknutí na tlačítko.
+        btnInputRemove = new JButton("Smazat"); // Toto tlačítko zde máme jen pro ukázku - v budoucnu ho odebereme
         btnInputRemove.addActionListener(this);
 
-
+        // Přidání komponent do horního panelu pro formulář na přidání položky
         panelInputs.add(lblInputName);
         panelInputs.add(txtInputName);
-
         panelInputs.add(lblInputPricePerPiece);
         panelInputs.add(txtInputPricePerPiece);
-
         panelInputs.add(lblInputPieces);
         panelInputs.add(txtInputPieces);
-
         panelInputs.add(btnInputAdd);
         panelInputs.add(btnInputRemove);
 
+        // Přidání (pod)panelů do panelu hlavního
         panelMain.add(panelInputs, BorderLayout.NORTH);
         panelMain.add(panelTable, BorderLayout.CENTER);
         panelMain.add(panelFooter, BorderLayout.SOUTH);
 
+        // Přidání hlavního panelu do MainFrame (JFrame)
         add(panelMain);
     }
 
+    // Při kliknutí na jakékoliv tlačítko se zavolá tato metoda.
+    // Toho jsme docílili implementování rozhraní ActionListener a nastavením tlačítek např. btnInputAdd.addActionListener(this);
     @Override
     public void actionPerformed(ActionEvent actionEvent) {
+        // Metoda se volá pro každé tlačítko, musíme tedy rozhodnout, co se má skutečně stát pro konkrétní tlačítka
         if(actionEvent.getSource() == btnInputAdd) {
+            // TODO: Domácí úkol
             System.out.println("Přidán produkt: [NÁZEV], [CENA/KUS] Kč [POČET]x");
         } else if(actionEvent.getSource() == btnInputRemove) {
             System.out.println("Smazáno!");
