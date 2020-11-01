@@ -14,7 +14,25 @@ public class ShoppingCart {
         return items;
     }
 
-    public void addItem(ShoppingCartItem item) {
-        this.items.add(item);
+    public void addItem(ShoppingCartItem newItem) {
+        boolean isInList = false;
+        for (ShoppingCartItem item : items) {
+            if(item.getName().equals(newItem.getName()) && item.getPricePerPiece() == newItem.getPricePerPiece()) {
+                isInList = true;
+                item.setPieces(item.getPieces() + newItem.getPieces());
+                break;
+            }
+        }
+
+        if(!isInList)
+            this.items.add(newItem);
+    }
+
+    public double getTotalPrice() {
+        double sum = 0;
+        for (ShoppingCartItem item : items) {
+            sum += item.getTotalPrice();
+        }
+        return sum;
     }
 }
