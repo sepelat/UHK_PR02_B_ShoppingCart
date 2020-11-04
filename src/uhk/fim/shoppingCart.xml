@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<shoppingCart>
+    <shoppingCartItem dateCreate="2020-11-02">
+        <name>Notebook Lenovo</name>
+        <pricePerPiece>13500</pricePerPiece>
+        <pieces>1</pieces>
+    </shoppingCartItem>
+    <shoppingCartItem dateCreate="2020-11-02">
+        <name>Samsung</name>
+        <pricePerPiece>5000</pricePerPiece>
+        <pieces>2</pieces>
+    </shoppingCartItem>
+</shoppingCart>
