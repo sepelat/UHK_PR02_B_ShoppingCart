@@ -223,11 +223,13 @@ public class MainFrame extends JFrame implements ActionListener {
                 public void startElement(String uri, String localName, String qName, Attributes attributes) throws SAXException {
                     content.reset();
                 }
+
                 // Parser narazil na uzavřený tag
                 @Override
                 public void endElement(String uri, String localName, String qName) throws SAXException {
                     System.out.println(qName + ": " + content.toString());
                 }
+
                 // Parser narazil na nějaký řetězec. Pozor, zavolá se i při nalezení odřádkování.
                 @Override
                 public void characters(char[] ch, int start, int length) throws SAXException {
@@ -259,19 +261,19 @@ public class MainFrame extends JFrame implements ActionListener {
             short nodeType = root.getNodeType();
             // *** Zde je jen snaha ukázat, že je nutné strukturu projít nějakou rekurzí viz. ukázky v olivě ***
             // Má kořenový element potomky?
-            if(root.hasChildNodes()){
+            if (root.hasChildNodes()) {
                 // Ano má - načteme položky do seznamu
                 NodeList list = root.getChildNodes();
                 // Projdeme seznam
-                for(int i = 0; i < list.getLength(); i++) {
+                for (int i = 0; i < list.getLength(); i++) {
                     // Načteme konkrétní node ze seznamu
                     Node nextNode = list.item(i);
                     // Opět se ptáme, jestli má potomky
-                    if(nextNode.hasChildNodes()) {
+                    if (nextNode.hasChildNodes()) {
                         // Ano má - načteme položky do seznamu
                         NodeList list2 = nextNode.getChildNodes();
                         // Projdeme seznam
-                        for(int j = 0; j <= list2.getLength(); j++){
+                        for (int j = 0; j <= list2.getLength(); j++) {
                             // Načteme konkrétní node ze seznamu
                             Node nextNode2 = list2.item(j);
                             /// !!! Tady už můžete vidět, že je ntuné vytvořit nějakou rekurzi !!!
