@@ -1,5 +1,9 @@
 package uhk.fim.gui;
 
+import com.google.gson.Gson;
+import org.dom4j.DocumentException;
+import org.dom4j.DocumentFactory;
+import org.dom4j.io.SAXReader;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
@@ -10,12 +14,11 @@ import uhk.fim.model.ShoppingCart;
 import uhk.fim.model.ShoppingCartItem;
 
 import javax.swing.*;
-import javax.swing.event.ChangeEvent;
-import javax.swing.event.ChangeListener;
 import javax.xml.parsers.*;
 import java.awt.*;
 import java.awt.event.*;
 import java.io.*;
+import java.net.URL;
 
 public class MainFrame extends JFrame implements ActionListener {
     JPanel panelMain;
@@ -45,6 +48,9 @@ public class MainFrame extends JFrame implements ActionListener {
         shoppingCartTableModel.setShoppingCart(shoppingCart);
 
         initGUI();
+
+        shoppingCart.addItem(new ShoppingCartItem("xx", 50, 1));
+        shoppingCartTableModel.fireTableDataChanged();
 
         updateFooter();
     }
@@ -121,13 +127,20 @@ public class MainFrame extends JFrame implements ActionListener {
             @Override
             public void actionPerformed(ActionEvent actionEvent) {
                 //loadFileXmlSax();
-                loadFileXmlDom();
+                //loadFileXmlDom();
+                loadFileXmlDom4j();
             }
         });
         fileMenu.add(new AbstractAction("Uložit") {
             @Override
             public void actionPerformed(ActionEvent actionEvent) {
                 saveFileCsv();
+            }
+        });
+        fileMenu.add(new AbstractAction("Načti json") {
+            @Override
+            public void actionPerformed(ActionEvent actionEvent) {
+                loadJson();
             }
         });
         menuBar.add(fileMenu);
@@ -289,5 +302,43 @@ public class MainFrame extends JFrame implements ActionListener {
         } catch (IOException e) {
             e.printStackTrace();
         }
+    }
+
+    private void loadFileXmlDom4j() {
+        DocumentFactory df = DocumentFactory.getInstance();
+        SAXReader reader = new SAXReader(df);
+        try {
+            org.dom4j.Document doc = reader.read(new File("src/shoppingCart.xml"));
+            System.out.println(doc.asXML());
+        } catch (DocumentException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void loadJson() {
+        Gson gson = new Gson();
+
+        Thread thread = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                // Simulace dlouhé odpovědi ze serveru
+                try {
+                    Thread.sleep(10000);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+
+                try {
+                    ShoppingCart cart = gson.fromJson(new InputStreamReader(
+                            new URL("https://lide.uhk.cz/fim/student/benesja4/shoppingCart.json").openStream()
+                    ), ShoppingCart.class);
+                    System.out.println("Done");
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        });
+        thread.start();
+
     }
 }
