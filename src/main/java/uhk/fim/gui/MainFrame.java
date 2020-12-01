@@ -10,10 +10,16 @@ import org.w3c.dom.NodeList;
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
+import uhk.fim.helpers.CSVFileManipulator;
+import uhk.fim.helpers.XMLFileManipulator;
 import uhk.fim.model.ShoppingCart;
 import uhk.fim.model.ShoppingCartItem;
 
 import javax.swing.*;
+import javax.swing.event.TableModelEvent;
+import javax.swing.event.TableModelListener;
+import javax.swing.filechooser.FileNameExtensionFilter;
+import javax.swing.table.TableModel;
 import javax.xml.parsers.*;
 import java.awt.*;
 import java.awt.event.*;
@@ -29,10 +35,10 @@ public class MainFrame extends JFrame implements ActionListener {
     JSpinner spInputPieces;
 
     // Labels
-    JLabel lblTotalPrice;
+    JLabel lblTotalPrice = new JLabel();
 
     ShoppingCart shoppingCart;
-    ShoppingCartTableModel shoppingCartTableModel;
+    ShoppingCartTableModel shoppingCartTableModel = new ShoppingCartTableModel();
 
 
     public MainFrame(int width, int height) {
@@ -40,17 +46,9 @@ public class MainFrame extends JFrame implements ActionListener {
         setSize(width, height);
         setDefaultCloseOperation(EXIT_ON_CLOSE);
 
-        // Vytvoříme košík (data)
-        shoppingCart = new ShoppingCart();
-        // Vytvoříme model
-        shoppingCartTableModel = new ShoppingCartTableModel();
-        // Propojíme model s košíkem (data)
-        shoppingCartTableModel.setShoppingCart(shoppingCart);
+        readFromFileCSV(new File("src/storage.csv"));
 
         initGUI();
-
-        shoppingCart.addItem(new ShoppingCartItem("xx", 50, 1));
-        shoppingCartTableModel.fireTableDataChanged();
 
         updateFooter();
     }
@@ -98,9 +96,15 @@ public class MainFrame extends JFrame implements ActionListener {
         panelFooter.add(lblTotalPrice, BorderLayout.WEST);
 
         // *** Tabulka ***
-        JTable table = new JTable();
-        // Tabulku propojíme s naším modelem
-        table.setModel(shoppingCartTableModel);
+        JTable table = new JTable(shoppingCartTableModel);
+        table.getModel().addTableModelListener(new TableModelListener() {
+            @Override
+            public void tableChanged(TableModelEvent e) {
+                // TODO: Update shoppingCart model so Footer could update
+                updateFooter();
+            }
+        });
+
         // Tabulku přidáme do panelu a obalíme ji komponentou JScrollPane
         panelTable.add(new JScrollPane(table), BorderLayout.CENTER);
 
@@ -120,21 +124,31 @@ public class MainFrame extends JFrame implements ActionListener {
         fileMenu.add(new AbstractAction("Nový nákupní seznam") {
             @Override
             public void actionPerformed(ActionEvent actionEvent) {
-                System.out.println("Nový soubor");
+                clearTable();
             }
         });
         fileMenu.add(new AbstractAction("Otevřít") {
             @Override
             public void actionPerformed(ActionEvent actionEvent) {
-                //loadFileXmlSax();
-                //loadFileXmlDom();
-                loadFileXmlDom4j();
+                readFromFileCSV(new File("src/storage.csv"));
+            }
+        });
+        fileMenu.add(new AbstractAction("Otevřít jako") {
+            @Override
+            public void actionPerformed(ActionEvent actionEvent) {
+                openAs();
             }
         });
         fileMenu.add(new AbstractAction("Uložit") {
             @Override
             public void actionPerformed(ActionEvent actionEvent) {
-                saveFileCsv();
+                saveToCSV(new File("src/storage.csv"));
+            }
+        });
+        fileMenu.add(new AbstractAction("Uložit jako") {
+            @Override
+            public void actionPerformed(ActionEvent actionEvent) {
+                saveAs();
             }
         });
         fileMenu.add(new AbstractAction("Načti json") {
@@ -167,7 +181,7 @@ public class MainFrame extends JFrame implements ActionListener {
                 double price = Double.parseDouble(txtInputPricePerPiece.getText().replace(",", "."));
                 if (price > 0) {
                     // Vytvořit novou položku
-                    ShoppingCartItem item = new ShoppingCartItem(txtInputName.getText(), price, (int) spInputPieces.getValue());
+                    ShoppingCartItem item = new ShoppingCartItem(txtInputName.getText(), price, (int) spInputPieces.getValue(), false);
                     // Přidat položku do košíku
                     shoppingCart.addItem(item);
                     // Refreshnout tabulku
@@ -188,7 +202,12 @@ public class MainFrame extends JFrame implements ActionListener {
     }
 
     private void updateFooter() {
-        lblTotalPrice.setText("Celková cena: " + String.format("%.2f", shoppingCart.getTotalPrice()));
+        lblTotalPrice.setText(String.format(
+            "Celková cena: %.2f | Cena zakoupených: %.2f | Rozdíl: %.2f",
+            shoppingCart.getTotalPrice(),
+            shoppingCart.getBoughtPrice(),
+            shoppingCart.getTotalPrice() - shoppingCart.getBoughtPrice()
+        ));
     }
 
     // Metoda, která se postará o uložení košíku do formátu CSV
@@ -221,100 +240,6 @@ public class MainFrame extends JFrame implements ActionListener {
         }
     }
 
-    // Metoda, která načte xml - SAX
-    // Mimo olivy můžete kouknout např. sem http://tutorials.jenkov.com/java-xml/sax-defaulthandler.html
-    private void loadFileXmlSax() {
-        try {
-            // Char buffer, do kterého budeme zapisovat "hodnoty" elementů
-            CharArrayWriter content = new CharArrayWriter();
-            // Vytvoříme SAX parser
-            SAXParser parser = SAXParserFactory.newInstance().newSAXParser();
-            // Řekneme, který file chceme parsovat a vytvoříme handler, který obslouží události, které budou vznikat při parsování
-            parser.parse(new File("src/uhk/fim/shoppingCart.xml"), new DefaultHandler() {
-                // Parser narazil na otevřený tag
-                @Override
-                public void startElement(String uri, String localName, String qName, Attributes attributes) throws SAXException {
-                    content.reset();
-                }
-
-                // Parser narazil na uzavřený tag
-                @Override
-                public void endElement(String uri, String localName, String qName) throws SAXException {
-                    System.out.println(qName + ": " + content.toString());
-                }
-
-                // Parser narazil na nějaký řetězec. Pozor, zavolá se i při nalezení odřádkování.
-                @Override
-                public void characters(char[] ch, int start, int length) throws SAXException {
-                    super.characters(ch, start, length);
-                    content.write(ch, start, length);
-                }
-            });
-
-        } catch (ParserConfigurationException e) {
-            e.printStackTrace();
-        } catch (SAXException e) {
-            e.printStackTrace();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
-
-    // Metoda, která načte xml - DOM
-    private void loadFileXmlDom() {
-        try {
-            // Vytvoříme builder
-            DocumentBuilder builder = DocumentBuilderFactory.newInstance().newDocumentBuilder();
-            // Builder má metodu parse, která se postará o vytvoření objektu docoment, který má v sobě celou strukturu XML
-            // Tím jsme si XML uložili do paměti a můžeme s ním dál pracovat = princim DOM
-            Document document = builder.parse(new File("src/uhk/fim/shoppingCart.xml"));
-            // Z dokumentu načteme prvního potomka = root = kořenová element
-            Node root = document.getFirstChild();
-            // Ukázka načtení typu nodu.
-            short nodeType = root.getNodeType();
-            // *** Zde je jen snaha ukázat, že je nutné strukturu projít nějakou rekurzí viz. ukázky v olivě ***
-            // Má kořenový element potomky?
-            if (root.hasChildNodes()) {
-                // Ano má - načteme položky do seznamu
-                NodeList list = root.getChildNodes();
-                // Projdeme seznam
-                for (int i = 0; i < list.getLength(); i++) {
-                    // Načteme konkrétní node ze seznamu
-                    Node nextNode = list.item(i);
-                    // Opět se ptáme, jestli má potomky
-                    if (nextNode.hasChildNodes()) {
-                        // Ano má - načteme položky do seznamu
-                        NodeList list2 = nextNode.getChildNodes();
-                        // Projdeme seznam
-                        for (int j = 0; j <= list2.getLength(); j++) {
-                            // Načteme konkrétní node ze seznamu
-                            Node nextNode2 = list2.item(j);
-                            /// !!! Tady už můžete vidět, že je ntuné vytvořit nějakou rekurzi !!!
-                            // Nemůžeme strukturu takto ručně projít.
-                        }
-                    }
-                }
-            }
-        } catch (ParserConfigurationException e) {
-            e.printStackTrace();
-        } catch (SAXException e) {
-            e.printStackTrace();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
-
-    private void loadFileXmlDom4j() {
-        DocumentFactory df = DocumentFactory.getInstance();
-        SAXReader reader = new SAXReader(df);
-        try {
-            org.dom4j.Document doc = reader.read(new File("src/shoppingCart.xml"));
-            System.out.println(doc.asXML());
-        } catch (DocumentException e) {
-            e.printStackTrace();
-        }
-    }
-
     private void loadJson() {
         Gson gson = new Gson();
 
@@ -340,5 +265,102 @@ public class MainFrame extends JFrame implements ActionListener {
         });
         thread.start();
 
+    }
+
+    private void readFromFileCSV(File file) {
+        CSVFileManipulator csvFileManipulator = new CSVFileManipulator();
+
+        try {
+            this.updateShoppingCart(csvFileManipulator.readFromFile(file));
+
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void readFromFileXML(File file) {
+        XMLFileManipulator xmlFileManipulator = new XMLFileManipulator();
+
+        try {
+            this.updateShoppingCart(xmlFileManipulator.readFromFile(file));
+
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void saveToXML(File file) {
+        XMLFileManipulator xmlFileManipulator = new XMLFileManipulator();
+
+        try (BufferedWriter bfw = new BufferedWriter(new FileWriter(file))) {
+            bfw.write(xmlFileManipulator.writeToFile(shoppingCart));
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void saveToCSV(File file) {
+        CSVFileManipulator csvFileManipulator = new CSVFileManipulator();
+
+        try (BufferedWriter bfw = new BufferedWriter(new FileWriter(file))) {
+            bfw.write(csvFileManipulator.writeToFile(shoppingCart));
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void clearTable() {
+        this.updateShoppingCart(new ShoppingCart());
+    }
+
+    private void updateShoppingCart(ShoppingCart shoppingCart) {
+        this.shoppingCart = shoppingCart;
+        this.shoppingCartTableModel.setShoppingCart(shoppingCart);
+        shoppingCartTableModel.fireTableDataChanged();
+        updateFooter();
+    }
+
+    private void saveAs() {
+        JFileChooser jFileChooser = new JFileChooser();
+        jFileChooser.setFileFilter(new FileNameExtensionFilter("XML", "xml"));
+        jFileChooser.setFileFilter(new FileNameExtensionFilter("CSV", "csv"));
+
+        int returnValue = jFileChooser.showSaveDialog(this);
+
+        if (returnValue == JFileChooser.APPROVE_OPTION) {
+            File selectedFile = jFileChooser.getSelectedFile();
+            String fileName = selectedFile.getName();
+            String extension = fileName.substring(fileName.lastIndexOf("."), fileName.length());
+
+            switch (extension) {
+                case ".xml": {
+                    saveToXML(selectedFile);
+                    break;
+                }
+                case ".csv": {
+                    saveToCSV(selectedFile);
+                    break;
+                }
+            }
+        }
+    }
+
+    private void openAs() {
+        JFileChooser jFileChooser = new JFileChooser();
+        jFileChooser.setFileFilter(new FileNameExtensionFilter("XML", "xml"));
+        jFileChooser.setFileFilter(new FileNameExtensionFilter("CSV", "csv"));
+
+        int returnValue = jFileChooser.showOpenDialog(this);
+
+        if (returnValue == JFileChooser.APPROVE_OPTION) {
+            File selectedFile = jFileChooser.getSelectedFile();
+            String fileName = selectedFile.getName();
+            String extension = fileName.substring(fileName.lastIndexOf("."), fileName.length());
+
+            switch (extension) {
+                case ".xml": readFromFileXML(selectedFile);
+                case ".csv": readFromFileCSV(selectedFile);
+            }
+        }
     }
 }

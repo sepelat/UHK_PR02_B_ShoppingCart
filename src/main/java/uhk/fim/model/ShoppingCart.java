@@ -1,8 +1,11 @@
 package uhk.fim.model;
 
+import com.thoughtworks.xstream.annotations.XStreamAlias;
+
 import java.util.ArrayList;
 import java.util.List;
 
+@XStreamAlias("shoppingCart")
 public class ShoppingCart {
     private List<ShoppingCartItem> items;
 
@@ -34,5 +37,13 @@ public class ShoppingCart {
             sum += item.getTotalPrice();
         }
         return sum;
+    }
+
+    public double getBoughtPrice() {
+        return items
+            .stream()
+            .filter(ShoppingCartItem::isBought)
+            .map(ShoppingCartItem::getTotalPrice)
+            .reduce(0.0, Double::sum);
     }
 }

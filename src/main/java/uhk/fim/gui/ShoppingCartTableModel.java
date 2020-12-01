@@ -16,7 +16,7 @@ public class ShoppingCartTableModel extends AbstractTableModel {
 
     @Override
     public int getColumnCount() {
-        return 4;
+        return 5;
     }
 
     // Tato metoda se volá, když se tabulka dotazuje hodnotu v buňce. Tedy pro kažkou buňku.
@@ -34,6 +34,8 @@ public class ShoppingCartTableModel extends AbstractTableModel {
                 return item.getPieces();
             case 3:
                 return item.getTotalPrice();
+            case 4:
+                return item.isBought();
             default:
                 return null;
         }
@@ -52,12 +54,47 @@ public class ShoppingCartTableModel extends AbstractTableModel {
                 return "Počet kusů";
             case 3:
                 return "Cena celkem";
+            case 4:
+                return "Zakoupeno";
             default:
                 return null;
         }
     }
 
+    @Override
+    public Class<?> getColumnClass(int columnIndex) {
+        switch (columnIndex) {
+            case 0:
+                return String.class;
+            case 1:
+            case 3:
+                return Double.class;
+            case 2:
+                return Integer.class;
+            case 4:
+                return Boolean.class;
+            default:
+                return null;
+        }
+    }
+
+    @Override
+    public boolean isCellEditable(int rowIndex, int columnIndex) {
+        return columnIndex == 4;
+    }
+
+    @Override
+    public void setValueAt(Object aValue, int rowIndex, int columnIndex) {
+        if (columnIndex == 4) {
+            shoppingCart.getItems().get(rowIndex).setBought((boolean) aValue);
+        }
+    }
+
     public void setShoppingCart(ShoppingCart shoppingCart) {
         this.shoppingCart = shoppingCart;
+    }
+
+    public ShoppingCart getShoppingCart() {
+        return shoppingCart;
     }
 }
